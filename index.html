@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나에게 어울리는 도자기는?</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f5f0e8 0%, #e8e0d5 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container { max-width: 500px; width: 100%; }
+
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 40px 32px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        .badge {
+            display: inline-block;
+            background: #8B7355; color: white;
+            padding: 6px 16px; border-radius: 20px;
+            font-size: 13px; margin-bottom: 24px;
+        }
+
+        h1 { font-size: 28px; color: #2d2d2d; margin-bottom: 16px; line-height: 1.4; }
+        .subtitle { color: #666; font-size: 15px; line-height: 1.7; margin-bottom: 32px; }
+
+        .start-btn {
+            background: #8B7355; color: white; border: none;
+            padding: 16px 48px; font-size: 16px;
+            border-radius: 12px; cursor: pointer;
+            transition: all 0.3s ease; font-weight: 600; font-family: inherit;
+        }
+        .start-btn:hover { background: #6d5a45; transform: translateY(-2px); }
+
+        .progress-bar {
+            width: 100%; height: 6px; background: #e5e5e5;
+            border-radius: 3px; margin-bottom: 32px; overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8B7355, #a08060);
+            border-radius: 3px; transition: width 0.4s ease;
+        }
+        .question-number { color: #8B7355; font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+        .question-text { font-size: 20px; color: #2d2d2d; line-height: 1.6; margin-bottom: 32px; font-weight: 500; }
+        .options { display: flex; flex-direction: column; gap: 12px; }
+        .option-btn {
+            background: #fafafa; border: 2px solid #e5e5e5;
+            padding: 16px 20px; border-radius: 12px;
+            font-size: 15px; color: #333; cursor: pointer;
+            transition: all 0.2s ease; text-align: left; font-family: inherit;
+        }
+        .option-btn:hover { border-color: #8B7355; background: #fdf9f5; }
+        .option-btn.selected { border-color: #8B7355; background: #8B7355; color: white; }
+
+        /* 공유용 카드 */
+        #share-card {
+            background: linear-gradient(160deg, #3d2c1e 0%, #5c3d22 60%, #3d2c1e 100%);
+            border-radius: 20px; padding: 32px 28px 24px;
+            margin-bottom: 20px; position: relative;
+            overflow: hidden; text-align: center;
+        }
+        #share-card::before {
+            content: ''; position: absolute; top: -80px; right: -80px;
+            width: 240px; height: 240px; border-radius: 50%;
+            background: rgba(255,255,255,0.03);
+        }
+        #share-card::after {
+            content: ''; position: absolute; bottom: -50px; left: -50px;
+            width: 180px; height: 180px; border-radius: 50%;
+            background: rgba(255,255,255,0.03);
+        }
+        .sc-festival {
+            display: inline-block;
+            border: 1px solid rgba(255,255,255,0.25); color: rgba(255,255,255,0.65);
+            padding: 4px 12px; border-radius: 20px;
+            font-size: 11px; letter-spacing: 0.04em; margin-bottom: 22px;
+        }
+        .sc-icon {
+            width: 96px; height: 96px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 18px; font-size: 42px; position: relative; z-index: 1;
+        }
+        .sc-archetype { color: rgba(255,255,255,0.55); font-size: 13px; margin-bottom: 6px; }
+        .sc-title { font-size: 34px; color: white; font-weight: 700; margin-bottom: 14px; letter-spacing: -0.01em; }
+        .sc-keywords { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 18px; }
+        .sc-keyword { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); padding: 4px 11px; border-radius: 20px; font-size: 12px; }
+        .sc-desc {
+            color: rgba(255,255,255,0.7); font-size: 13px; line-height: 1.75; text-align: left;
+            background: rgba(0,0,0,0.18); padding: 15px 17px; border-radius: 12px; margin-bottom: 20px;
+        }
+        .sc-footer {
+            display: flex; align-items: center; justify-content: space-between;
+            border-top: 1px solid rgba(255,255,255,0.1); padding-top: 14px;
+        }
+        .sc-footer-l { text-align: left; }
+        .sc-footer-title { color: rgba(255,255,255,0.85); font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+        .sc-footer-sub { color: rgba(255,255,255,0.4); font-size: 10px; }
+        .sc-footer-icon {
+            width: 34px; height: 34px; background: rgba(255,255,255,0.12);
+            border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 16px;
+        }
+
+        /* 워크지 */
+        .worksheet-box {
+            background: #fdf9f4; border: 2px dashed #c9aa80;
+            border-radius: 14px; padding: 16px 20px;
+            margin-bottom: 20px; display: flex; align-items: center; gap: 14px; text-align: left;
+        }
+        .ws-num { font-size: 38px; font-weight: 700; color: #8B7355; min-width: 48px; text-align: center; line-height: 1; }
+        .ws-label { font-size: 13px; color: #8B7355; font-weight: 600; margin-bottom: 3px; }
+        .ws-hint { font-size: 12px; color: #aaa; }
+
+        /* 버튼 */
+        .action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+        .btn-save, .btn-share {
+            padding: 14px 12px; border-radius: 12px;
+            font-size: 14px; font-weight: 600; cursor: pointer; border: none;
+            display: flex; align-items: center; justify-content: center;
+            gap: 6px; transition: all 0.2s ease; font-family: inherit;
+        }
+        .btn-save { background: #8B7355; color: white; }
+        .btn-save:hover { background: #6d5a45; transform: translateY(-1px); }
+        .btn-save:active { transform: scale(0.98); }
+        .btn-save.busy { opacity: 0.65; pointer-events: none; }
+        .btn-share { background: #f0ebe3; color: #5a3e28; }
+        .btn-share:hover { background: #e0d4c4; transform: translateY(-1px); }
+        .btn-share:active { transform: scale(0.98); }
+
+        .result-description {
+            color: #555; font-size: 15px; line-height: 1.8;
+            margin-bottom: 20px; text-align: left;
+            background: #fafafa; padding: 24px; border-radius: 16px;
+        }
+        .result-description p { margin-bottom: 16px; }
+        .result-description p:last-child { margin-bottom: 0; }
+
+        .restart-btn {
+            width: 100%; background: transparent; color: #8B7355;
+            border: 2px solid #8B7355; padding: 14px 32px; font-size: 15px;
+            border-radius: 12px; cursor: pointer; transition: all 0.3s ease;
+            font-weight: 600; font-family: inherit;
+        }
+        .restart-btn:hover { background: #8B7355; color: white; }
+
+        .credit { margin-top: 24px; font-size: 11px; color: #999; line-height: 1.6; }
+
+        .loading { display: none; }
+        .loading.active { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 0; }
+        .spinner {
+            width: 50px; height: 50px; border: 4px solid #e5e5e5; border-top-color: #8B7355;
+            border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { color: #666; font-size: 15px; }
+
+        /* ── 공유 바텀시트 ── */
+        .sheet-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 1000;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .sheet-overlay.open {
+            display: flex;
+            animation: fadeIn 0.2s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .sheet {
+            background: white;
+            border-radius: 24px 24px 0 0;
+            padding: 20px 20px 36px;
+            width: 100%; max-width: 500px;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .sheet-handle {
+            width: 40px; height: 4px;
+            background: #e0e0e0; border-radius: 2px;
+            margin: 0 auto 20px;
+        }
+        .sheet-title { font-size: 15px; font-weight: 600; color: #2d2d2d; margin-bottom: 16px; text-align: center; }
+
+        .share-options { display: flex; flex-direction: column; gap: 10px; }
+
+        .share-option {
+            display: flex; align-items: center; gap: 14px;
+            padding: 14px 18px; border-radius: 14px;
+            border: none; background: #f7f4f0;
+            cursor: pointer; transition: background 0.2s;
+            font-family: inherit; text-align: left; width: 100%;
+        }
+        .share-option:hover { background: #ede8e0; }
+        .share-option:active { transform: scale(0.99); }
+
+        .share-option-icon {
+            width: 44px; height: 44px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; flex-shrink: 0;
+        }
+        .share-option-text { display: flex; flex-direction: column; }
+        .share-option-label { font-size: 15px; font-weight: 600; color: #2d2d2d; margin-bottom: 2px; }
+        .share-option-desc { font-size: 12px; color: #999; }
+
+        .kakao-icon { background: #FEE500; }
+        .sms-icon { background: #34C759; }
+        .copy-icon { background: #f0ebe3; }
+
+        .sheet-cancel {
+            width: 100%; padding: 14px; margin-top: 10px;
+            background: transparent; border: none;
+            font-size: 15px; color: #999; cursor: pointer;
+            font-family: inherit; border-radius: 12px;
+            transition: background 0.2s;
+        }
+        .sheet-cancel:hover { background: #f5f5f5; }
+
+        /* 토스트 */
+        .toast {
+            position: fixed; bottom: 28px;
+            left: 50%; transform: translateX(-50%) translateY(16px);
+            background: rgba(30,20,10,0.88); color: white;
+            padding: 11px 22px; border-radius: 100px;
+            font-size: 14px; font-family: inherit;
+            opacity: 0; transition: all 0.3s ease;
+            z-index: 9999; white-space: nowrap; pointer-events: none;
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+
+        <!-- 시작 화면 -->
+        <div id="start-screen" class="screen active">
+            <div class="badge">15문항 · 약 3분</div>
+            <h1>나에게 어울리는<br>도자기는?</h1>
+            <p class="subtitle">나의 성향을 분석하여<br>가장 닮은 도자기 유형을 찾아드립니다.</p>
+            <button class="start-btn" onclick="startQuiz()">테스트 시작하기 →</button>
+            <p class="credit">PMAI® 원형 이론 기반<br>이천도자기축제 40주년 아카이빙관</p>
+        </div>
+
+        <!-- 질문 화면 -->
+        <div id="question-screen" class="screen">
+            <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+            <div class="question-number" id="question-number">Q1 / 15</div>
+            <div class="question-text" id="question-text"></div>
+            <div class="options" id="options"></div>
+        </div>
+
+        <!-- 로딩 화면 -->
+        <div id="loading-screen" class="loading">
+            <div class="spinner"></div>
+            <p class="loading-text">결과를 분석하고 있습니다...</p>
+        </div>
+
+        <!-- 결과 화면 -->
+        <div id="result-screen" class="screen">
+
+            <div id="share-card">
+                <div class="sc-festival">이천도자기축제 40주년 아카이빙관</div>
+                <div class="sc-icon" id="sc-icon"></div>
+                <div class="sc-archetype" id="sc-archetype"></div>
+                <div class="sc-title" id="sc-title"></div>
+                <div class="sc-keywords" id="sc-keywords"></div>
+                <div class="sc-desc" id="sc-desc"></div>
+                <div class="sc-footer">
+                    <div class="sc-footer-l">
+                        <div class="sc-footer-title">나에게 어울리는 도자기는?</div>
+                        <div class="sc-footer-sub">이천도자기축제 아카이빙관</div>
+                    </div>
+                    <div class="sc-footer-icon">📱</div>
+                </div>
+            </div>
+
+            <div class="worksheet-box">
+                <div class="ws-num" id="ws-num"></div>
+                <div>
+                    <div class="ws-label">워크지를 찾아주세요</div>
+                    <div class="ws-hint" id="ws-hint"></div>
+                </div>
+            </div>
+
+            <div class="action-btns">
+                <button class="btn-save" id="btn-save" onclick="saveImage()">📥 이미지 저장</button>
+                <button class="btn-share" onclick="openShareSheet()">🔗 공유하기</button>
+            </div>
+
+            <div class="result-description" id="result-description"></div>
+
+            <button class="restart-btn" onclick="restartQuiz()">↩ 처음으로 돌아가기</button>
+
+            <p class="credit">
+                본 테스트는 Carl Jung의 원형 이론과 PMAI® 연구를 참고하여 제작되었습니다.<br>
+                결과는 자기 탐색을 위한 참고 자료입니다.
+            </p>
+            <p class="credit" style="margin-top:12px; font-size:10px; color:#bbb;">
+                제작: (주)웰컴그라운드 | 저작권은 제작사에게 있습니다.
+            </p>
+        </div>
+
+    </div>
+</div>
+
+<!-- 공유 바텀시트 -->
+<div class="sheet-overlay" id="sheet-overlay" onclick="closeShareSheet(event)">
+    <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">공유하기</div>
+        <div class="share-options">
+
+            <button class="share-option" onclick="shareKakao()">
+                <div class="share-option-icon kakao-icon">💬</div>
+                <div class="share-option-text">
+                    <span class="share-option-label">카카오톡</span>
+                    <span class="share-option-desc">카카오톡으로 결과 공유하기</span>
+                </div>
+            </button>
+
+            <button class="share-option" onclick="shareSMS()">
+                <div class="share-option-icon sms-icon">💬</div>
+                <div class="share-option-text">
+                    <span class="share-option-label">문자 메시지</span>
+                    <span class="share-option-desc">SMS / MMS로 보내기</span>
+                </div>
+            </button>
+
+            <button class="share-option" onclick="copyLink()">
+                <div class="share-option-icon copy-icon">🔗</div>
+                <div class="share-option-text">
+                    <span class="share-option-label">링크 복사</span>
+                    <span class="share-option-desc">클립보드에 링크 복사하기</span>
+                </div>
+            </button>
+
+        </div>
+        <button class="sheet-cancel" onclick="closeShareSheet()">취소</button>
+    </div>
+</div>
+
+<!-- 토스트 -->
+<div class="toast" id="toast"></div>
+
+<script>
+    const questions = [
+        { id: 'I1', text: "나는 세상에는 좋은 것이 더 많다고 믿는다", type: 'innocent' },
+        { id: 'R1', text: "기존의 규칙이나 관습에 의문을 제기하는 편이다", type: 'revolutionary' },
+        { id: 'S1', text: "나는 어떤 일이든 그 이면에 있는 진짜 의미를 이해하려고 노력한다", type: 'sage' },
+        { id: 'G1', text: "주변 사람들이 편안하고 안전하게 느끼도록 돕는 것이 중요하다", type: 'caregiver' },
+        { id: 'C1', text: "나만의 방식으로 무언가를 만들어내는 것이 좋다", type: 'creator' },
+        { id: 'S2', text: "깊이 생각하고 분석하는 시간이 나에게는 중요하다", type: 'sage' },
+        { id: 'C2', text: "정해진 틀보다 자유롭게 표현하는 것을 선호한다", type: 'creator' },
+        { id: 'I2', text: "단순하고 정돈된 환경에서 마음이 편안해진다", type: 'innocent' },
+        { id: 'G2', text: "실용적이고 쓸모 있는 것에 가치를 둔다", type: 'caregiver' },
+        { id: 'R2', text: "변화를 이끌어내는 것이 두렵지 않다", type: 'revolutionary' },
+        { id: 'C3', text: "독창적인 아이디어나 결과물을 낼 때 보람을 느낀다", type: 'creator' },
+        { id: 'G3', text: "가까운 사람들을 돌보고 지원하는 일에서 의미를 찾는다", type: 'caregiver' },
+        { id: 'R3', text: "익숙한 것보다 새롭고 파격적인 것에 끌린다", type: 'revolutionary' },
+        { id: 'S3', text: "지식과 통찰을 얻는 것이 삶의 큰 기쁨이다", type: 'sage' },
+        { id: 'I3', text: "복잡한 것보다 명료하고 깔끔한 것을 선호한다", type: 'innocent' }
+    ];
+
+    const answerOptions = [
+        { text: "전혀 아니다", value: 1 },
+        { text: "아니다", value: 2 },
+        { text: "보통이다", value: 3 },
+        { text: "그렇다", value: 4 },
+        { text: "매우 그렇다", value: 5 }
+    ];
+
+    const results = {
+        sage: {
+            title: "청자", archetype: "현자 (Sage) 원형", icon: "🏺",
+            iconBg: "rgba(74,144,112,0.22)",
+            keywords: ["깊은 사유", "진리 탐구", "지혜", "통찰", "비색"],
+            wsNum: "1번", wsHint: "청자 도안 워크지",
+            shortDesc: "고려 장인이 비색을 탐구하듯, 당신은 사물의 이면에 있는 진짜 의미를 끊임없이 탐구합니다. 깊고 고요한 내면의 세계를 지닌 현자입니다.",
+            description: `<p><strong>당신에게 가장 활성화된 원형은 '현자(Sage)'입니다.</strong></p>
+            <p>현자는 진리를 탐구하고 세상을 깊이 이해하려는 원형입니다. 당신은 표면적인 답보다 본질적인 의미를 추구하며, 지식과 통찰을 통해 자유를 얻습니다.</p>
+            <p>고려 장인들이 "비밀의 색" 비색(翡色)을 완성하기까지 수십 년을 연구했듯, 청자는 깊은 사유와 정신적 풍요를 상징합니다.</p>`
+        },
+        innocent: {
+            title: "백자", archetype: "순수자 (Innocent) 원형", icon: "⚪",
+            iconBg: "rgba(200,188,170,0.28)",
+            keywords: ["순수", "절제", "조화", "단순미", "담백함"],
+            wsNum: "2번", wsHint: "백자 도안 워크지",
+            shortDesc: "군더더기 없는 순백처럼, 당신은 복잡함 속에서도 본질적인 아름다움을 찾습니다. 단순함 속에 깊은 조화가 있음을 아는 사람입니다.",
+            description: `<p><strong>당신에게 가장 활성화된 원형은 '순수자(Innocent)'입니다.</strong></p>
+            <p>순수자는 세상의 선함을 믿고, 단순함 속에서 행복을 찾는 원형입니다. 당신은 복잡함보다 명료함을, 혼란보다 조화를 추구합니다.</p>
+            <p>조선 선비들이 백자의 담백함에서 도(道)를 읽었듯, 불필요한 것을 덜어낸 자리에서 본질적인 아름다움이 빛납니다.</p>`
+        },
+        creator: {
+            title: "분청사기", archetype: "창조자 (Creator) 원형", icon: "🎨",
+            iconBg: "rgba(180,100,50,0.22)",
+            keywords: ["창의", "자유", "개성", "독창성", "실험"],
+            wsNum: "3번", wsHint: "분청사기 도안 워크지",
+            shortDesc: "자유로운 붓질로 나만의 무늬를 새기듯, 당신은 정해진 틀 밖에서 가장 빛납니다. 모든 것에 당신만의 흔적을 남기는 창조자입니다.",
+            description: `<p><strong>당신에게 가장 활성화된 원형은 '창조자(Creator)'입니다.</strong></p>
+            <p>창조자는 자기만의 방식으로 세상을 표현하려는 원형입니다. 당신은 정해진 틀보다 자유로운 표현을 선호하며, 독창적인 결과물을 만들어낼 때 진정한 자신을 느낍니다.</p>
+            <p>귀얄 자국이 장인의 손길을 고스란히 담듯, 당신이 만들어내는 모든 것에는 당신만의 흔적이 새겨집니다.</p>`
+        },
+        caregiver: {
+            title: "옹기", archetype: "돌봄이 (Caregiver) 원형", icon: "🫙",
+            iconBg: "rgba(100,65,30,0.22)",
+            keywords: ["따뜻함", "실용", "돌봄", "안정", "가정"],
+            wsNum: "4번", wsHint: "옹기 도안 워크지",
+            shortDesc: "숨 쉬는 흙이 발효를 돕듯, 당신은 곁에 있는 것만으로 사람들에게 힘이 됩니다. 관계 속에서 진정한 의미를 찾는 든든한 존재입니다.",
+            description: `<p><strong>당신에게 가장 활성화된 원형은 '돌봄이(Caregiver)'입니다.</strong></p>
+            <p>돌봄이는 타인을 보살피고 안전하게 지켜주려는 원형입니다. 당신은 주변 사람들이 편안하게 느끼도록 돕는 것에서 의미를 찾으며, 실용적이고 쓸모 있는 것에 가치를 둡니다.</p>
+            <p>옹기가 김치와 장을 익게 하며 가정을 지켜왔듯, 당신은 가까운 사람들의 삶을 더 풍요롭게 만드는 든든한 존재입니다.</p>`
+        },
+        revolutionary: {
+            title: "현대도자", archetype: "반항아 (Revolutionary) 원형", icon: "💎",
+            iconBg: "rgba(50,70,110,0.22)",
+            keywords: ["혁신", "파격", "변화", "도전", "새로움"],
+            wsNum: "5번", wsHint: "현대도자 도안 워크지",
+            shortDesc: "도자기란 무엇인가를 끊임없이 질문하는 현대도자처럼, 당신은 당연한 것에 물음표를 던지는 개척자입니다.",
+            description: `<p><strong>당신에게 가장 활성화된 원형은 '반항아(Revolutionary)'입니다.</strong></p>
+            <p>반항아는 기존의 규칙에 도전하고 변화를 이끄는 원형입니다. 당신은 익숙한 것보다 새로운 것에 끌리며, 현재의 틀을 깨고 더 나은 방향을 모색합니다.</p>
+            <p>현대도자 작가들이 "도자기란 무엇인가"라는 질문 자체를 뒤흔들듯, 당신은 당연하게 여겨지는 것들에 물음표를 던지는 개척자입니다.</p>`
+        }
+    };
+
+    let currentQuestion = 0;
+    let scores = { sage: 0, innocent: 0, creator: 0, caregiver: 0, revolutionary: 0 };
+    let currentType = '';
+
+    function showScreen(id) {
+        document.querySelectorAll('.screen, .loading').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function startQuiz() {
+        currentQuestion = 0;
+        scores = { sage: 0, innocent: 0, creator: 0, caregiver: 0, revolutionary: 0 };
+        showScreen('question-screen');
+        showQuestion();
+    }
+
+    function showQuestion() {
+        const q = questions[currentQuestion];
+        const progress = (currentQuestion / questions.length) * 100;
+        document.getElementById('progress').style.width = progress + '%';
+        document.getElementById('question-number').textContent = `Q${currentQuestion + 1} / ${questions.length}`;
+        document.getElementById('question-text').textContent = q.text;
+
+        const container = document.getElementById('options');
+        container.innerHTML = '';
+        answerOptions.forEach(option => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.textContent = option.text;
+            btn.onclick = () => selectAnswer(option.value, q.type);
+            container.appendChild(btn);
+        });
+    }
+
+    function selectAnswer(value, type) {
+        scores[type] += value;
+        event.target.classList.add('selected');
+        document.querySelectorAll('.option-btn').forEach(b => b.style.pointerEvents = 'none');
+        setTimeout(() => {
+            currentQuestion++;
+            currentQuestion < questions.length ? showQuestion() : showLoading();
+        }, 300);
+    }
+
+    function showLoading() {
+        document.getElementById('progress').style.width = '100%';
+        showScreen('loading-screen');
+        setTimeout(showResult, 1500);
+    }
+
+    function showResult() {
+        let maxType = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+        currentType = maxType;
+        const r = results[maxType];
+
+        const iconEl = document.getElementById('sc-icon');
+        iconEl.style.background = r.iconBg;
+        iconEl.textContent = r.icon;
+        document.getElementById('sc-archetype').textContent = r.archetype;
+        document.getElementById('sc-title').textContent = r.title;
+        document.getElementById('sc-desc').textContent = r.shortDesc;
+
+        const kw = document.getElementById('sc-keywords');
+        kw.innerHTML = '';
+        r.keywords.forEach(k => {
+            const s = document.createElement('span');
+            s.className = 'sc-keyword';
+            s.textContent = '#' + k;
+            kw.appendChild(s);
+        });
+
+        document.getElementById('ws-num').textContent = r.wsNum;
+        document.getElementById('ws-hint').textContent = r.wsHint;
+        document.getElementById('result-description').innerHTML = r.description;
+
+        showScreen('result-screen');
+    }
+
+    // ── 이미지 저장 ──
+    async function saveImage() {
+        const btn = document.getElementById('btn-save');
+        btn.classList.add('busy');
+        btn.textContent = '⏳ 저장 중...';
+        try {
+            const canvas = await html2canvas(document.getElementById('share-card'), {
+                scale: 3, useCORS: true, backgroundColor: null, logging: false
+            });
+            const link = document.createElement('a');
+            link.download = `내도자기유형_${results[currentType].title}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast('이미지가 저장됐어요 🎉');
+        } catch (e) {
+            showToast('저장에 실패했어요. 다시 시도해주세요.');
+        }
+        btn.classList.remove('busy');
+        btn.textContent = '📥 이미지 저장';
+    }
+
+    // ── 바텀시트 ──
+    function openShareSheet() {
+        document.getElementById('sheet-overlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeShareSheet(e) {
+        if (e && e.target !== document.getElementById('sheet-overlay') && e.type !== 'click') return;
+        if (e && e.currentTarget === document.getElementById('sheet-overlay') && e.target !== e.currentTarget) return;
+        document.getElementById('sheet-overlay').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    // ── 카카오톡 공유 ──
+    function shareKakao() {
+        closeShareSheet();
+        const r = results[currentType];
+        const msg = `나의 도자기 유형은 "${r.title}" (${r.archetype})!\n${r.shortDesc}\n\n${window.location.href}`;
+
+        // 모바일: Web Share API → 카카오톡 앱 선택 가능
+        if (navigator.share) {
+            navigator.share({
+                title: '나에게 어울리는 도자기는?',
+                text: `나의 도자기 유형은 "${r.title}"!\n${r.shortDesc}`,
+                url: window.location.href
+            }).catch(() => {});
+        } else {
+            // PC 폴백: 클립보드 복사 후 카카오톡 웹 열기
+            navigator.clipboard.writeText(msg).then(() => {
+                showToast('텍스트가 복사됐어요. 카카오톡에 붙여넣어주세요 💬');
+            });
+        }
+    }
+
+    // ── 문자 공유 ──
+    function shareSMS() {
+        closeShareSheet();
+        const r = results[currentType];
+        const body = encodeURIComponent(
+            `나의 도자기 유형은 "${r.title}" (${r.archetype})!\n${r.shortDesc}\n\n테스트 하러 가기 → ${window.location.href}`
+        );
+        // iOS: sms:&body=... / Android: sms:?body=...
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        window.location.href = isIOS ? `sms:&body=${body}` : `sms:?body=${body}`;
+    }
+
+    // ── 링크 복사 ──
+    function copyLink() {
+        closeShareSheet();
+        navigator.clipboard.writeText(window.location.href)
+            .then(() => showToast('링크가 복사됐어요 📋'))
+            .catch(() => showToast('주소창의 링크를 복사해주세요.'));
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    function restartQuiz() { showScreen('start-screen'); }
+</script>
+</body>
+</html>
